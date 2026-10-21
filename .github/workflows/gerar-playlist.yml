@@ -1,0 +1,38 @@
+name: Gerar playlist IPTV leve
+
+on:
+  push:
+    paths:
+      - .github/workflows/gerar-playlist.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter repositorio
+        uses: actions/checkout@v4
+
+      - name: Baixar playlist original da release
+        run: |
+          curl --fail --location --retry 3 --silent --show-error \
+            "https://github.com/FeiRune12/iptv-brasileira/releases/download/1.0/Lista_Unificada.m3u8" \
+            --output Lista_Unificada.m3u8
+          test "$(wc -c < Lista_Unificada.m3u8)" -gt 200000000
+
+      - name: Gerar playlist otimizada
+        run: python3 scripts/gerar_playlist_leve.py
+
+      - name: Publicar playlist no repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Lista_Unificada_Leve.m3u8
+          if ! git diff --cached --quiet; then
+            git commit -m "Publicar playlist IPTV leve (menos de 25 MB)"
+            git push
+          fi
