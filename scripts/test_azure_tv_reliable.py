@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import azure_tv_preview as original
 import azure_tv_reliable as reliable
+from export_azure_tv_test_channels import export_changed_channels
 
 
 class AzureTVSafetyTest(unittest.TestCase):
@@ -78,6 +79,34 @@ class AzureTVSafetyTest(unittest.TestCase):
         self.assertEqual(decisions[('live tv hd','canais | tv','https://cdn.example.org/old.m3u8')],
                          'https://cdn.example.org/good.m3u8')
         self.assertEqual(summary['healthyAlternativesStaged'],1)
+
+
+    def test_mini_playlist_never_copies_vod(self):
+        original=(
+            b'#EXTM3U\n'
+            b'#EXTINF:-1 group-title="Canais | TV",Teste HD\n'
+            b'#EXTVLCOPT:network-caching=1000\n'
+            b'https://cdn.example.org/old.m3u8\n'
+            b'#EXTINF:-1 group-title="S\xc3\xa9ries | Drama",Serie Favorita\n'
+            b'https://vod.example.org/episodio.mp4\n'
+        )
+        replacement=original.replace(b'https://cdn.example.org/old.m3u8',
+                                     b'https://cdn.example.org/healthy.m3u8')
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            a,b,c=[root/x for x in ('old.m3u8','new.m3u8','mini.m3u8')]
+            a.write_bytes(original)
+            b.write_bytes(replacement)
+            changed=export_changed_channels(a,b,c)
+            self.assertEqual(changed,1)
+            self.assertIn(b'https://cdn.example.org/healthy.m3u8',c.read_bytes())
+            self.assertIn(b'#EXTVLCOPT:network-caching=1000',c.read_bytes())
+            self.assertNotIn(b'episodio.mp4',c.read_bytes())
+            self.assertNotIn(b'Serie Favorita',c.read_bytes())
+            with self.assertRaises(RuntimeError):
+                b.write_bytes(original.replace(b'episodio.mp4',b'new.mp4'))
+                export_changed_channels(a,b,c)
+
 
 
 if __name__=='__main__':
