@@ -45,3 +45,17 @@ Quando uma verificacao de HLS encontra alternativas, o workflow cria uma mini-pl
 Substitua `SUA_CHAVE` pela chave privada ja usada em seu endereco original Azure TV, sem publica-la. Essa chave e verificada pelo mesmo bucket R2, mas a mini-playlist fica em outro objeto. Adicione como **playlist de teste separada**, nao substitua a playlist principal.
 
 O script [export_azure_tv_test_channels.py](scripts/export_azure_tv_test_channels.py) valida que a mini-lista contem apenas URLs alterados de TV e nunca copia URLs de filmes ou series. Em ausencia de uma alternativa validada, uma rotina pode eliminar previews antigos. Nunca promova as alternativas automaticamente ao endereco principal.
+
+## Atualizacao aprovada de 119 canais (24/10/2026)
+
+Esta operacao **ja foi executada** em um workflow de uso unico do GitHub Actions, com registro de preflight, backup e verificacao SHA-256 depois da publicacao.
+
+- Exatamente **119 URLs de canais** foram substituidas.
+- **431.730 entradas** continuaram presentes na mesma ordem, com as mesmas linhas de metadados.
+- **431.062 entradas protegidas de filmes, series e outros VOD** mantiveram seus URLs sem mudancas.
+- A playlist principal continua em `playlist.m3u8`, sem mudar o link permanente usado no IPTV Expert.
+- O backup imutavel anterior foi salvo no R2 como `__azure_tv_sync/backups/favorites-before-119-channel-update-20261024.m3u8` (111.000.682 bytes).
+- A versao publicada contem 111.000.186 bytes, SHA-256 `5b78d32620d4897bfb0cafedfbdaf28131e81b2795e966f80a237cd2bf5365d4`.
+- Workflow: [execucao de promocao](https://github.com/FeiRune12/iptv-brasileira/actions/runs/40143224289).
+
+**A promocao em producao foi desativada** apos confirmar o resultado. O monitor de HLS continua preparando previews em separado; nunca promove mudancas futuras automaticamente. O funcionamento real e os favoritos especificos de canais devem ser conferidos no IPTV Expert, pois alguns players associam o favorito ao URL.
