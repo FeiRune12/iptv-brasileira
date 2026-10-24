@@ -54,6 +54,7 @@ async function authorized(request) {
 }
 
 const PREVIEW_KEY = '__azure_tv_preview/playlist.m3u8';
+const MINI_KEY = '__azure_tv_preview/channels-test.m3u8';
 const SAFE_HEADERS = {'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'};
 async function allowPermanentKey(url, bucket) {
   const token = url.searchParams.get('access_key') || '';
@@ -68,11 +69,13 @@ export default {
     const url=new URL(request.url), method=request.method;
     if (url.pathname==='/health' && method==='GET') return json({ready:true,name:'azure-tv-preview'});
     try {
-      if (url.pathname==='/playlist-preview.m3u8' && (method==='GET'||method==='HEAD')) {
+      if ((url.pathname==='/playlist-preview.m3u8'||url.pathname==='/channels-test.m3u8') && (method==='GET'||method==='HEAD')) {
         if (!(await allowPermanentKey(url,env.PLAYLIST))) return new Response('Acesso negado',{status:401,headers:SAFE_HEADERS});
-        const obj=method==='HEAD' ? await env.PLAYLIST.head(PREVIEW_KEY) : await env.PLAYLIST.get(PREVIEW_KEY);
+        const mini=url.pathname==='/channels-test.m3u8';
+        const requestedKey=mini?MINI_KEY:PREVIEW_KEY;
+        const obj=method==='HEAD' ? await env.PLAYLIST.head(requestedKey) : await env.PLAYLIST.get(requestedKey);
         if (!obj) return new Response('Playlist de teste ainda nao gerada',{status:404,headers:SAFE_HEADERS});
-        return new Response(method==='HEAD'?null:obj.body,{headers:{...SAFE_HEADERS,'Content-Type':'application/vnd.apple.mpegurl; charset=utf-8','Content-Disposition':'attachment; filename="Azure_TV_Preview.m3u8"'}});
+        return new Response(method==='HEAD'?null:obj.body,{headers:{...SAFE_HEADERS,'Content-Type':'application/vnd.apple.mpegurl; charset=utf-8','Content-Disposition':mini?'attachment; filename="Azure_TV_Teste_Canais.m3u8"':'attachment; filename="Azure_TV_Preview.m3u8"'}});
       }
       if (!(await authorized(request))) return fail('Unauthorized',401);
       if (url.pathname==='/original' && method==='GET') {
@@ -80,9 +83,23 @@ export default {
         if (!obj) return fail('Original missing',404);
         return new Response(obj.body,{headers:{...SAFE_HEADERS,'Content-Type':'application/vnd.apple.mpegurl; charset=utf-8','X-Original-Size':String(obj.size),'X-Original-Etag':obj.etag}});
       }
+      if (url.pathname==='/preview' && method==='GET') {
+        const obj=await env.PLAYLIST.get(PREVIEW_KEY);
+        if (!obj) return fail('No preview available',404);
+        return new Response(obj.body,{headers:{...SAFE_HEADERS,'Content-Type':'application/vnd.apple.mpegurl; charset=utf-8','X-Preview-Size':String(obj.size),'X-Preview-Etag':obj.etag}});
+      }
+      if (url.pathname==='/save-mini' && method==='POST') {
+        if (Number(request.headers.get('content-length')||0)>500000) return fail('Mini-playlist too large',413);
+        const data=await request.arrayBuffer();
+        if (data.byteLength<200||data.byteLength>500000) return fail('Mini-playlist size invalid',413);
+        const text=new TextDecoder().decode(data);
+        if (!text.startsWith('#EXTM3U')||!text.includes('#EXTINF:')||text.includes('<script')) return fail('Invalid mini-playlist',400);
+        const saved=await env.PLAYLIST.put(MINI_KEY,data,{httpMetadata:{contentType:'application/vnd.apple.mpegurl'}});
+        return json({ok:true,size:saved.size});
+      }
       if (url.pathname==='/state' && method==='GET') {
-        const [orig,preview,state,checked]=await Promise.all([env.PLAYLIST.head(PLAYLIST_KEY),env.PLAYLIST.head(PREVIEW_KEY),env.PLAYLIST.get(STATE_KEY),env.PLAYLIST.get('__azure_tv_preview/checked.json')]);
-        return json({original:{size:orig?.size||0,etag:orig?.etag||null},preview:{size:preview?.size||0},metadata:state?await state.json():null,checked:checked?await checked.json():null});
+        const [orig,preview,mini,state,checked]=await Promise.all([env.PLAYLIST.head(PLAYLIST_KEY),env.PLAYLIST.head(PREVIEW_KEY),env.PLAYLIST.head(MINI_KEY),env.PLAYLIST.get(STATE_KEY),env.PLAYLIST.get('__azure_tv_preview/checked.json')]);
+        return json({original:{size:orig?.size||0,etag:orig?.etag||null},preview:{size:preview?.size||0,etag:preview?.etag||null},mini:{size:mini?.size||0},metadata:state?await state.json():null,checked:checked?await checked.json():null});
       }
       if (url.pathname==='/checked' && method==='POST') {
         const body=await request.json();
