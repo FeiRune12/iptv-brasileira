@@ -87,7 +87,7 @@ export default {
       if (url.pathname==='/checked' && method==='POST') {
         const body=await request.json();
         if (!body || typeof body.sourceCommit!=='string' || !body.sources || typeof body.sources!=='object') return fail('Invalid source state',400);
-        if (!Object.entries(body.sources).every(([k,v])=>/^CanaisBR\\d{2}\\.m3u8$/i.test(k)&&/^[a-f0-9]{40}$/.test(v))) return fail('Invalid source files',400);
+        if (!Object.entries(body.sources).every(([k,v])=>/^CanaisBR\d{2}\.m3u8$/i.test(k)&&/^[a-f0-9]{40}$/.test(v))) return fail('Invalid source files',400);
         await env.PLAYLIST.put('__azure_tv_preview/checked.json',JSON.stringify({
           sourceCommit:body.sourceCommit,sources:body.sources,verifiedAt:new Date().toISOString(),
           urlUpdatesFound:Number(body.urlUpdatesFound)||0
