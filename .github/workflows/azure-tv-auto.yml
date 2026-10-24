@@ -1,0 +1,28 @@
+name: Atualizar Azure TV automaticamente
+
+on:
+  schedule:
+    # Verifica o repositorio de origem a cada hora. Pode haver atrasos no GitHub.
+    - cron: '23 * * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/azure-tv-auto.yml'
+      - 'scripts/sync_azure_tv.py'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-tv-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar alteracoes e publicar com seguranca
+        run: python3 scripts/sync_azure_tv.py
