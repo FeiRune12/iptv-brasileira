@@ -21,3 +21,17 @@ Um hash estrutural antes/depois garante que nada alem dos URLs identificados com
 Os links dos canais sao de servidores externos. Mesmo um endereco atualizado nao garante disponibilidade, autorizacao ou compatibilidade com todos os players.
 
 Nota: o GitHub pode pausar agendas por inatividade prolongada em repositorios publicos. Acompanhe a aba Actions.
+
+## Saude dos canais ao vivo (versao segura)
+
+Desde outubro de 2026, o workflow [`azure-tv-preview.yml`](.github/workflows/azure-tv-preview.yml) executa os testes de regressao de `test_azure_tv_reliable.py` e a verificacao `scripts/azure_tv_reliable.py`.
+
+A rotina verifica fingerprints dos arquivos CanaisBR da origem e do catalogo publico `iptv-org/iptv` (Brasil) a cada hora. Quando o material e os testes de saude recentes nao mudaram, ela pula a varredura pesada. Caso contrario, analisa somente canais que tenham correspondencia nominal clara e URLs alternativos.
+
+Para uma alternativa ser considerada, ela precisa retornar um manifesto HLS valido e permitir ler um segmento de midia. Um segundo teste confirma a resposta. Se a URL atual estiver funcionando no teste, nao ha troca. Falha por bloqueio de regiao ou de um runner do GitHub nao prova que o stream esta indisponivel na casa do usuario.
+
+**Importante:** a playlist principal `playlist.m3u8` no R2 nao recebe atualizacoes desse fluxo. O script so publica um arquivo separado de PREVIEW quando encontra alternativa validada, mantendo os mesmos registros, nomes, categorias, ordem e URLs de filmes/series. Assim, favoritos existentes nao sao afetados pela verificacao automatica.
+
+O sistema nao garante funcionamento permanente; canais de terceiros podem sair do ar, bloquear navegadores/dispositivos ou exigir permissao de acesso. Teste alternativas no IPTV Expert antes de optar por substituir canais na principal.
+
+Confira relatorios e resultados na aba GitHub Actions.
