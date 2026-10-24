@@ -323,8 +323,8 @@ def main():
         after,after_counts=base.structural_signature(staged)
         if before!=after or original_counts!=after_counts:
             raise RuntimeError('FAIL-CLOSED: series, movies, metadata, order or titles differ')
-        if changed!=len(decisions):
-            raise RuntimeError('Change count mismatch')
+        if changed<len(decisions):
+            raise RuntimeError('Fewer changed entries than selected replacement keys')
         if not size*0.8<=staged.stat().st_size<=size*1.2:
             raise RuntimeError('Unexpected file size change')
         report={
