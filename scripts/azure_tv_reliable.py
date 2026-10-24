@@ -30,7 +30,7 @@ MAX_CANDIDATES_PER_CHANNEL = 5
 CHECK_WORKERS = 12
 PROBE_TIMEOUT = 6
 QUALITY_END = re.compile(r'(?:\s+\b(?:HD|FHD|FULL HD|SD|UHD|4K|720P|1080P)\b|\s+\((?:\d{3,4}p|HD|FHD)\)|\s+\[(?:not 24/7|\d{3,4}p)\])\s*$', re.I)
-ADULT_TERMS = re.compile(r'(?<!\w)(?:xxx|porno\w*|hentai|adult\w*|sex\w*|18\+|\+18)(?!\w)', re.I)
+ADULT_TERMS = re.compile(r'(?<!\w)(?:xxx|porno\w*|hentai|adult\w*|sex\w*|18\+|\+18|casino|cassino|poker|apostas?|betting|gambling|slots?)(?!\w)', re.I)
 
 
 def canonical_title(title):
