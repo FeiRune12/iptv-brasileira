@@ -1,0 +1,27 @@
+name: Azure TV - Testar atualizacao dos canais sem afetar favoritos
+
+on:
+  push:
+    paths:
+      - '.github/workflows/azure-tv-preview.yml'
+      - 'scripts/azure_tv_preview.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: azure-tv-preview
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+
+      - name: Verificar e gerar playlist separada
+        run: python3 scripts/azure_tv_preview.py
