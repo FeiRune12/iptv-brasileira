@@ -1,6 +1,9 @@
 name: Azure TV - Testar atualizacao dos canais sem afetar favoritos
 
 on:
+  schedule:
+    # Verifica apenas se os arquivos de canais mudaram; nao publica na playlist principal.
+    - cron: '19 * * * *'
   push:
     paths:
       - '.github/workflows/azure-tv-preview.yml'
