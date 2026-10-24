@@ -24,7 +24,7 @@ import unicodedata
 import azure_tv_preview as base
 
 ALTERNATIVE = 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/br.m3u'
-RELIABILITY_SCHEMA = 3
+RELIABILITY_SCHEMA = 4
 CHECK_INTERVAL = 12 * 3600
 MAX_CANDIDATES_PER_CHANNEL = 5
 CHECK_WORKERS = 12
@@ -348,7 +348,8 @@ def main():
                   'previewBytes':staged.stat().st_size}
             gateway.upload(staged,meta)
         else:
-            print('No verified alternatives to stage. Original remains unchanged.',flush=True)
+            gateway.call('/clear',{})
+            print('No verified alternatives; any stale preview was removed. Original unchanged.',flush=True)
         gateway.call('/checked',report)
 
 
