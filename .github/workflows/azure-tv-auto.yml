@@ -1,14 +1,19 @@
-name: Azure TV sync PAUSADA - preservar favoritos
+name: Restaurar Azure TV antiga (execucao unica)
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/azure-tv-auto.yml'
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
-  sync:
-    if: ${{ false }}
+  restore:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
-      - run: echo 'Sincronizacao pausada para preservar favoritos do usuario.'
+      - uses: actions/checkout@v4
+      - name: Restaurar a playlist original a partir do backup de 111 MB
+        run: python3 -c "import sys; sys.path.insert(0, 'scripts'); from sync_azure_tv import Uploader; print(Uploader().call('/restore', {}))"
