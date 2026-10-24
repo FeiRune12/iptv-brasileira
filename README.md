@@ -2,20 +2,22 @@
 
 Projeto de organizacao de playlists IPTV para uso pessoal.
 
-## Sincronizacao automatica
+## Preservacao de favoritos: playlist principal protegida
 
-A rotina em [.github/workflows/azure-tv-auto.yml](.github/workflows/azure-tv-auto.yml) verifica, aproximadamente uma vez por hora, as listas do repositorio [Ramys/Iptv-Brasil-2026](https://github.com/Ramys/Iptv-Brasil-2026), no branch master.
+A playlist principal fica no bucket privado R2, no arquivo `playlist.m3u8`. Os aplicativos que usam o Azure TV devem continuar com o endereco atual. Nao remova, reorganize ou regenere este arquivo sem testar antes: favoritos do player podem depender da identidade e da ordem dos registros.
 
-Ela acompanha os arquivos CanaisBRNN.m3u8 e Filmes-Series.m3u8. Alteracoes apenas no README ou em outros arquivos nao exigem republicacao.
+**A antiga rotina de atualizacao completa esta PAUSADA:** [.github/workflows/azure-tv-auto.yml](.github/workflows/azure-tv-auto.yml).
 
-Quando um arquivo monitorado muda, o script [scripts/sync_azure_tv.py](scripts/sync_azure_tv.py) baixa as fontes de uma revisao fixa, gera a playlist, aplica filtros e valida antes de enviar.
+## Checagem segura de URL dos canais
 
-Filtros: excluir conteudo adulto por nomes/categorias, URLs repetidas e canais de TV nao identificados como HD ou FHD. Esses filtros sao heuristicos e podem precisar de ajustes se as fontes mudarem.
+O workflow [.github/workflows/azure-tv-preview.yml](.github/workflows/azure-tv-preview.yml) verifica aproximadamente a cada hora se os arquivos `CanaisBRNN.m3u8` do repositorio [Ramys/Iptv-Brasil-2026](https://github.com/Ramys/Iptv-Brasil-2026) tiveram mudancas. Se os SHAs dos arquivos nao mudaram, ele nao baixa nem reprocessa a playlist.
 
-O upload usa autenticacao GitHub Actions OIDC, sem guardar credenciais do R2 no repositorio. O Worker independente de upload esta em [scripts/azure_tv_sync_worker.js](scripts/azure_tv_sync_worker.js); aceita apenas tokens validos deste repositorio e workflow no branch main.
+Se houver mudancas, o script [scripts/azure_tv_preview.py](scripts/azure_tv_preview.py) compara os titulos exatos de canais ao vivo com as fontes. Ele so prepara alteracoes para URLs com correspondencia nao ambigua. Nomes, grupos, ordem, linhas de metadados e todos os URLs de filmes/series/animes permanecem identicos.
 
-O arquivo final substitui playlist.m3u8 no bucket privado sem alterar o link permanente usado no player. O gateway preserva o primeiro backup historico e as duas versoes anteriores mais recentes.
+Um hash estrutural antes/depois garante que nada alem dos URLs identificados como TV seja modificado. Se nao houver URLs novos, a rotina registra a verificacao e nao publica um arquivo novo.
 
-Em caso de falha de download, validacao ou upload, a rotina retorna erro e evita substituir uma lista incompleta. Uma playlist valida nao garante que todos os canais ou servidores IPTV estejam online.
+**NUNCA substitui a playlist principal automaticamente.** Havendo novidades, a rotina cria uma playlist separada no R2 para teste, via [scripts/azure_tv_preview_worker.js](scripts/azure_tv_preview_worker.js). O arquivo de preview so pode ser acessado usando uma chave permanente Azure TV valida. Teste as novidades antes de promover manualmente, pois alguns players podem vincular favoritos ao URL do conteudo.
 
-Nota: O GitHub pode desativar workflows agendados em repositorios publicos apos longos periodos de inatividade. Verifique a aba Actions e reative caso necessario.
+Os links dos canais sao de servidores externos. Mesmo um endereco atualizado nao garante disponibilidade, autorizacao ou compatibilidade com todos os players.
+
+Nota: o GitHub pode pausar agendas por inatividade prolongada em repositorios publicos. Acompanhe a aba Actions.
