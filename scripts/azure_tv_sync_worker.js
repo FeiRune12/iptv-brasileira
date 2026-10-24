@@ -62,6 +62,24 @@ export default {
         const [state, live] = await Promise.all([env.PLAYLIST.get(STATE_KEY),env.PLAYLIST.head(PLAYLIST_KEY)]);
         return json({state:state?await state.json():null,liveBytes:live?.size||0});
       }
+      if (request.method === 'POST' && url.pathname === '/restore') {
+        // One-time emergency restoration of the original catalog.
+        const key = '__azure_tv_sync/backups/2026-10-24T19-43-16-467Z.m3u8';
+        const expectedOriginal = 111000682;
+        const expectedCurrent = 297823822;
+        const [backupHead, current] = await Promise.all([env.PLAYLIST.head(key), env.PLAYLIST.head(PLAYLIST_KEY)]);
+        if (!backupHead || backupHead.size !== expectedOriginal) return json({error:'Original backup missing/mismatched'},409);
+        if (!current || current.size !== expectedCurrent) return json({error:'Live playlist changed; refusing unsafe restore',liveBytes:current?.size},409);
+        const original = await env.PLAYLIST.get(key);
+        if (!original) return json({error:'Cannot read backup'},500);
+        const saved = await env.PLAYLIST.put(PLAYLIST_KEY, original.body, {
+          httpMetadata:{contentType:'application/vnd.apple.mpegurl'}
+        });
+        const verify = await env.PLAYLIST.head(PLAYLIST_KEY);
+        if (!saved || !verify || verify.size !== expectedOriginal) return json({error:'Restore verification failed',size:verify?.size},500);
+        await env.PLAYLIST.put(STATE_KEY,JSON.stringify({restoredFrom:key,bytes:verify.size,restoredAt:new Date().toISOString(),syncPaused:true}),{httpMetadata:{contentType:'application/json'}});
+        return json({ok:true,restoredBytes:verify.size,sourceBackup:key});
+      }
       if (request.method === 'POST' && url.pathname === '/start') {
         const live = await env.PLAYLIST.get(PLAYLIST_KEY);
         let backup = null;
