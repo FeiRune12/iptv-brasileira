@@ -24,10 +24,11 @@ WORKER = 'https://azure-tv-sync.giovannisilvaalves604.workers.dev'
 UA = 'AzureTV-Sync/1.0 (GitHub Actions)'
 SOURCE_NAME = re.compile(r'^(?:CanaisBR\d{2}|Filmes-Series)\.m3u8$', re.I)
 GROUP = re.compile(r'group-title="([^"]*)"', re.I)
-ADULT = re.compile(r'(?<![a-z0-9])(?:xxx|porn\w*|erotic\w*|adultos?|18\+|sex(?:o|ual)?|hentai|onlyfans)(?![a-z0-9])', re.I)
+ADULT = re.compile(r'(?<![a-z0-9])(?:xxx|porn\w*|erotic\w*|adult(?:o|os|s)?|18\s*\+|\+18|🔞|sex(?:o|ual)?|hentai|onlyfans)(?![a-z0-9])', re.I)
 BAD_TV = re.compile(r'(?<![a-z0-9])(?:sd|4k|uhd|2160p|480p|360p)(?![a-z0-9])', re.I)
 GOOD_TV = re.compile(r'(?<![a-z0-9])(?:hd|fhd|full[ -]?hd|1080p|720p)(?![a-z0-9])', re.I)
 CHUNK = 8 * 1024 * 1024
+PIPELINE_VERSION = 2
 
 
 def get_json(url, headers=None, timeout=30):
@@ -158,7 +159,7 @@ def write_playlist(revision, files, path):
     return {'revision':revision,'sources':files, 'tv':counts['tv'],'movies':counts['movies'],
             'series':counts['series'],'total':total,'adultExcluded':counts['adult'],
             'duplicateUrlsExcluded':counts['duplicate_url'],'nonHdExcluded':counts['non_hd'],
-            'sha256':digest.hexdigest(),'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'bytes':size}
+            'sha256':digest.hexdigest(),'pipelineVersion':PIPELINE_VERSION,'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'bytes':size}
 
 
 def upload(uploader, path, meta):
@@ -194,7 +195,8 @@ def main():
     worker = Uploader()
     current = worker.call('/state')
     previous = current.get('state') or {}
-    if previous.get('sources') == files and os.environ.get('FORCE_SYNC') != 'true':
+    if (previous.get('sources') == files and previous.get('pipelineVersion') == PIPELINE_VERSION
+            and os.environ.get('FORCE_SYNC') != 'true'):
         print('No playlist changes upstream, nothing to deploy.', flush=True)
         return
     with tempfile.TemporaryDirectory() as directory:
