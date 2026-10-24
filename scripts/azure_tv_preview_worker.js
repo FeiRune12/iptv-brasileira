@@ -88,9 +88,18 @@ export default {
         const body=await request.json();
         if (!body || typeof body.sourceCommit!=='string' || !body.sources || typeof body.sources!=='object') return fail('Invalid source state',400);
         if (!Object.entries(body.sources).every(([k,v])=>/^CanaisBR\d{2}\.m3u8$/i.test(k)&&/^[a-f0-9]{40}$/.test(v))) return fail('Invalid source files',400);
+        const validHealth = body.healthSummary && typeof body.healthSummary==='object'
+          ? Object.fromEntries(Object.entries(body.healthSummary).filter(([k,v])=>/^[a-zA-Z0-9_]{1,40}$/.test(k)&&Number.isFinite(Number(v))).map(([k,v])=>[k,Number(v)]))
+          : {};
         await env.PLAYLIST.put('__azure_tv_preview/checked.json',JSON.stringify({
           sourceCommit:body.sourceCommit,sources:body.sources,verifiedAt:new Date().toISOString(),
-          urlUpdatesFound:Number(body.urlUpdatesFound)||0
+          urlUpdatesFound:Number(body.urlUpdatesFound)||0,
+          healthSchema:Number.isInteger(body.healthSchema)?body.healthSchema:0,
+          verifiedEpoch:Number.isInteger(body.verifiedEpoch)?body.verifiedEpoch:0,
+          altDigest:typeof body.altDigest==='string'&&/^[a-f0-9]{64}$/.test(body.altDigest)?body.altDigest:'',
+          healthSummary:validHealth,
+          liveEntriesIdentified:Number(body.liveEntriesIdentified)||0,
+          vodEntriesProtected:Number(body.vodEntriesProtected)||0
         }),{httpMetadata:{contentType:'application/json'}});
         return json({ok:true});
       }
