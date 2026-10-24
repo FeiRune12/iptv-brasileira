@@ -81,8 +81,18 @@ export default {
         return new Response(obj.body,{headers:{...SAFE_HEADERS,'Content-Type':'application/vnd.apple.mpegurl; charset=utf-8','X-Original-Size':String(obj.size),'X-Original-Etag':obj.etag}});
       }
       if (url.pathname==='/state' && method==='GET') {
-        const [orig,preview,state]=await Promise.all([env.PLAYLIST.head(PLAYLIST_KEY),env.PLAYLIST.head(PREVIEW_KEY),env.PLAYLIST.get(STATE_KEY)]);
-        return json({original:{size:orig?.size||0,etag:orig?.etag||null},preview:{size:preview?.size||0},metadata:state?await state.json():null});
+        const [orig,preview,state,checked]=await Promise.all([env.PLAYLIST.head(PLAYLIST_KEY),env.PLAYLIST.head(PREVIEW_KEY),env.PLAYLIST.get(STATE_KEY),env.PLAYLIST.get('__azure_tv_preview/checked.json')]);
+        return json({original:{size:orig?.size||0,etag:orig?.etag||null},preview:{size:preview?.size||0},metadata:state?await state.json():null,checked:checked?await checked.json():null});
+      }
+      if (url.pathname==='/checked' && method==='POST') {
+        const body=await request.json();
+        if (!body || typeof body.sourceCommit!=='string' || !body.sources || typeof body.sources!=='object') return fail('Invalid source state',400);
+        if (!Object.entries(body.sources).every(([k,v])=>/^CanaisBR\\d{2}\\.m3u8$/i.test(k)&&/^[a-f0-9]{40}$/.test(v))) return fail('Invalid source files',400);
+        await env.PLAYLIST.put('__azure_tv_preview/checked.json',JSON.stringify({
+          sourceCommit:body.sourceCommit,sources:body.sources,verifiedAt:new Date().toISOString(),
+          urlUpdatesFound:Number(body.urlUpdatesFound)||0
+        }),{httpMetadata:{contentType:'application/json'}});
+        return json({ok:true});
       }
       if (url.pathname==='/start' && method==='POST') {
         const original=await env.PLAYLIST.head(PLAYLIST_KEY);
