@@ -63,7 +63,6 @@ async function allowPermanentKey(url, bucket) {
   const hex = Array.from(new Uint8Array(buf), x=>x.toString(16).padStart(2,'0')).join('');
   return !!(await bucket.head('__azure_tv_keys/'+hex));
 }
-function fail(msg, status) {return json({error:msg},status);}
 
 const ORIGINAL_KEY='playlist.m3u8';
 const STAGED_KEY='__azure_tv_preview/playlist.m3u8';
