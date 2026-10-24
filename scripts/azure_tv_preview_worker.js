@@ -83,6 +83,11 @@ export default {
         if (!obj) return fail('Original missing',404);
         return new Response(obj.body,{headers:{...SAFE_HEADERS,'Content-Type':'application/vnd.apple.mpegurl; charset=utf-8','X-Original-Size':String(obj.size),'X-Original-Etag':obj.etag}});
       }
+      if (url.pathname==='/clear' && method==='POST') {
+        // Delete staged results only. The main playlist and permanent links are never touched.
+        await env.PLAYLIST.delete([PREVIEW_KEY,MINI_KEY,STATE_KEY]);
+        return json({ok:true,cleared:'preview_only'});
+      }
       if (url.pathname==='/preview' && method==='GET') {
         const obj=await env.PLAYLIST.get(PREVIEW_KEY);
         if (!obj) return fail('No preview available',404);
