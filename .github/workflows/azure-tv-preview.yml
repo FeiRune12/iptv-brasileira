@@ -1,13 +1,15 @@
-name: Azure TV - Testar atualizacao dos canais sem afetar favoritos
+name: Azure TV - Saude e alternativas seguras para canais
 
 on:
   schedule:
-    # Verifica apenas se os arquivos de canais mudaram; nao publica na playlist principal.
+    # Confere novas fontes de hora em hora e reavalia os links periodicamente.
     - cron: '19 * * * *'
   push:
     paths:
       - '.github/workflows/azure-tv-preview.yml'
       - 'scripts/azure_tv_preview.py'
+      - 'scripts/azure_tv_reliable.py'
+      - 'scripts/test_azure_tv_reliable.py'
   workflow_dispatch:
 
 permissions:
@@ -26,5 +28,8 @@ jobs:
       - name: Checkout do repositorio
         uses: actions/checkout@v4
 
-      - name: Verificar e gerar playlist separada
-        run: python3 scripts/azure_tv_preview.py
+      - name: Verificar que filmes, series e favoritos ficam intactos
+        run: python3 -m unittest discover -s scripts -p 'test_azure_tv_reliable.py' -v
+
+      - name: Testar HLS e preparar somente alternativas confiaveis
+        run: python3 scripts/azure_tv_reliable.py
