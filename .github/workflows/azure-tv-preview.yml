@@ -10,6 +10,7 @@ on:
       - 'scripts/azure_tv_preview.py'
       - 'scripts/azure_tv_reliable.py'
       - 'scripts/test_azure_tv_reliable.py'
+      - 'scripts/export_azure_tv_test_channels.py'
   workflow_dispatch:
 
 permissions:
@@ -33,3 +34,6 @@ jobs:
 
       - name: Testar HLS e preparar somente alternativas confiaveis
         run: python3 scripts/azure_tv_reliable.py
+
+      - name: Exportar lista pequena de canais verificados para testes no IPTV Expert
+        run: python3 scripts/export_azure_tv_test_channels.py
