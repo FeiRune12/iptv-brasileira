@@ -35,3 +35,13 @@ Para uma alternativa ser considerada, ela precisa retornar um manifesto HLS vali
 O sistema nao garante funcionamento permanente; canais de terceiros podem sair do ar, bloquear navegadores/dispositivos ou exigir permissao de acesso. Teste alternativas no IPTV Expert antes de optar por substituir canais na principal.
 
 Confira relatorios e resultados na aba GitHub Actions.
+
+## Como testar alternativas sem perder os favoritos
+
+Quando uma verificacao de HLS encontra alternativas, o workflow cria uma mini-playlist privada no Azure TV contendo **somente os canais modificados**, mantendo suas linhas de metadados originais. O URL da mini-playlist e:
+
+`https://azure-tv-preview.giovannisilvaalves604.workers.dev/channels-test.m3u8?access_key=SUA_CHAVE`
+
+Substitua `SUA_CHAVE` pela chave privada ja usada em seu endereco original Azure TV, sem publica-la. Essa chave e verificada pelo mesmo bucket R2, mas a mini-playlist fica em outro objeto. Adicione como **playlist de teste separada**, nao substitua a playlist principal.
+
+O script [export_azure_tv_test_channels.py](scripts/export_azure_tv_test_channels.py) valida que a mini-lista contem apenas URLs alterados de TV e nunca copia URLs de filmes ou series. Em ausencia de uma alternativa validada, uma rotina pode eliminar previews antigos. Nunca promova as alternativas automaticamente ao endereco principal.
