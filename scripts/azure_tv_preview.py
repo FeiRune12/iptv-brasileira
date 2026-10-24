@@ -142,15 +142,19 @@ class PreviewGateway:
             raise
 
 
-def latest_candidates():
+def source_snapshot():
     ref=remote_json(API+'/git/ref/heads/master')['object']['sha']
     tree=remote_json(API+'/git/trees/'+ref+'?recursive=1')
     if tree.get('truncated'):
         raise RuntimeError('Upstream tree truncated')
-    names=sorted(row['path'] for row in tree['tree'] if row['type']=='blob'
-                 and '/' not in row['path'] and SOURCE.fullmatch(row['path']))
-    if not {'CanaisBR01.m3u8','CanaisBR02.m3u8'}<=set(names):
+    hashes={row['path']:row['sha'] for row in tree['tree'] if row['type']=='blob'
+                 and '/' not in row['path'] and SOURCE.fullmatch(row['path'])}
+    if not {'CanaisBR01.m3u8','CanaisBR02.m3u8'}<=set(hashes):
         raise RuntimeError('Upstream core files missing')
+    return ref,dict(sorted(hashes.items()))
+
+
+def latest_candidates(ref, names):
     # Exact normalized channel title -> set of available source URLs.
     candidates=defaultdict(set)
     counts=Counter()
@@ -257,11 +261,17 @@ def transform(original,preview,candidates):
 
 def main():
     gateway=PreviewGateway()
+    commit,sources=source_snapshot()
+    remote_state=gateway.call('/state')
+    checked=(remote_state.get('checked') or {})
+    if checked.get('sources')==sources and os.environ.get('FORCE_PREVIEW')!='true':
+        print('NO CHANGES in original channel source files. Preserving the live playlist.',flush=True)
+        return
     with tempfile.TemporaryDirectory(prefix='azure-tv-preview-') as directory:
         original=Path(directory)/'original.m3u8'
         preview=Path(directory)/'preview.m3u8'
         original_size,etag=gateway.download_original(original)
-        commit,candidates=latest_candidates()
+        commit,candidates=latest_candidates(commit,list(sources))
         before,original_counts=structural_signature(original)
         changes=transform(original,preview,candidates)
         after,preview_counts=structural_signature(preview)
@@ -274,7 +284,9 @@ def main():
         print('Live URL changes:',dict(changes),flush=True)
         print('Structural checksum identical:',before,flush=True)
         if changes['urlsChanged']==0:
-            raise RuntimeError('No unambiguous live URL updates were found: keeping original untouched')
+            gateway.call('/checked',{'sourceCommit':commit,'sources':sources,'urlUpdatesFound':0})
+            print('No new channel URLs found. Kept the main playlist entirely unchanged.',flush=True)
+            return
         meta={'originalBytes':original_size,'originalEtag':etag,
               'entries':original_counts['entries'],'tvEntries':original_counts['tv'],
               'protectedVOD':original_counts['nonTv'],'urlsChanged':changes['urlsChanged'],
@@ -282,6 +294,7 @@ def main():
               'structureHash':before,'previewBytes':preview_size,
               'generatedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())}
         gateway.upload(preview,meta)
+        gateway.call('/checked',{'sourceCommit':commit,'sources':sources,'urlUpdatesFound':changes['urlsChanged']})
 
 
 if __name__=='__main__':
