@@ -1,19 +1,14 @@
-name: Restaurar Azure TV antiga (execucao unica)
+name: Azure TV - atualizacao automatica PAUSADA
 
 on:
-  push:
-    paths:
-      - '.github/workflows/azure-tv-auto.yml'
+  workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
-  restore:
+  sync:
+    if: ${{ false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - name: Restaurar a playlist original a partir do backup de 111 MB
-        run: python3 -c "import sys; sys.path.insert(0, 'scripts'); from sync_azure_tv import Uploader; print(Uploader().call('/restore', {}))"
+      - run: echo "Pausada para preservar os favoritos da playlist."
