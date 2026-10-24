@@ -94,6 +94,14 @@ export default {
         const published = await upload.complete(body.parts);
         if (published.size < 10000000) return json({error:'Published object unexpectedly small, restore backup'},500);
         await env.PLAYLIST.put(STATE_KEY, JSON.stringify({...body.meta,bytes:published.size,updatedAt:new Date().toISOString()}),{httpMetadata:{contentType:'application/json'}});
+        // Keep the first historical backup and the two most recent ones.
+        try {
+          const listing = await env.PLAYLIST.list({prefix:'__azure_tv_sync/backups/',limit:1000});
+          const backups = listing.objects.map(o=>o.key).sort();
+          if (!listing.truncated && backups.length > 3) {
+            await env.PLAYLIST.delete(backups.slice(1, -2));
+          }
+        } catch (ignored) { /* A failed cleanup must not undo a successful publish. */ }
         return json({ok:true,bytes:published.size});
       }
       if (request.method === 'POST' && url.pathname === '/abort') {
