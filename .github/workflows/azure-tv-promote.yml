@@ -1,25 +1,14 @@
-name: Azure TV - Aplicar 119 canais aprovados UMA VEZ
+name: Azure TV - Promocao de canais ja concluida, DESATIVADA
 
 on:
-  push:
-    paths:
-      - '.github/workflows/azure-tv-promote.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
-
-concurrency:
-  group: azure-tv-one-time-production-update
-  cancel-in-progress: false
 
 jobs:
-  promote:
+  no_more_changes:
+    if: ${{ false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 18
     steps:
-      - name: Ler o codigo do projeto
-        uses: actions/checkout@v4
-
-      - name: Verificar estrutura e promover apenas os 119 URLs apos criar backup
-        run: python3 scripts/azure_tv_promote.py
+      - run: echo "119 URLs atualizados, backup preservado, nenhuma nova promocao automatica."
