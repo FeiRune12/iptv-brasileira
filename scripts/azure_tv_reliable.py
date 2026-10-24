@@ -299,7 +299,16 @@ def build_preview(original,staged,decisions):
 def main():
     gateway=base.PreviewGateway()
     orig_revision,source_hashes=base.source_snapshot()
-    checked=(gateway.call('/state').get('checked') or {})
+    state=gateway.call('/state')
+    checked=(state.get('checked') or {})
+    stage=(state.get('metadata') or {})
+    active=(state.get('original') or {})
+    # A previously approved preview must NEVER be reused after production has
+    # changed. Removing only staged objects protects the live favorites.
+    if stage.get('originalEtag') and stage['originalEtag']!=active.get('etag'):
+        gateway.call('/clear',{})
+        print('Old staged URLs cleared after production update; live untouched.',flush=True)
+        checked={}
     # Read the public alternative playlist each run; skip large downloads if unchanged.
     with urllib.request.urlopen(base.repo_request(ALTERNATIVE),timeout=30) as r:
         alt_bytes=r.read(4*1024*1024)
