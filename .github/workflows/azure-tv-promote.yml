@@ -1,0 +1,25 @@
+name: Azure TV - Aplicar 119 canais aprovados UMA VEZ
+
+on:
+  push:
+    paths:
+      - '.github/workflows/azure-tv-promote.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: azure-tv-one-time-production-update
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Ler o codigo do projeto
+        uses: actions/checkout@v4
+
+      - name: Verificar estrutura e promover apenas os 119 URLs apos criar backup
+        run: python3 scripts/azure_tv_promote.py
