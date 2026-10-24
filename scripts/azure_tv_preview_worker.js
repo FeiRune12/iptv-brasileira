@@ -85,7 +85,7 @@ export default {
       }
       if (url.pathname==='/clear' && method==='POST') {
         // Delete staged results only. The main playlist and permanent links are never touched.
-        await env.PLAYLIST.delete([PREVIEW_KEY,MINI_KEY,STATE_KEY]);
+        await env.PLAYLIST.delete([PREVIEW_KEY,MINI_KEY,STATE_KEY,'__azure_tv_preview/checked.json']);
         return json({ok:true,cleared:'preview_only'});
       }
       if (url.pathname==='/preview' && method==='GET') {
