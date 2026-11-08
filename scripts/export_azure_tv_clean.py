@@ -12,14 +12,14 @@ SOURCES = ["CanaisBR01.m3u8", "CanaisBR02.m3u8", "CanaisBR03.m3u8",
            "CanaisBR04.m3u8", "Filmes-Series.m3u8"]
 OUT = Path("Azure_TV_Limpa_HD_FHD.m3u8")
 GROUP = re.compile(r'group-title="([^"]*)"', re.I)
-ADULT = re.compile(r'(?<![a-z0-9])(?:xxx|porn\\w*|erotic\\w*|adult(?:o|os|s)?|18\\s*\\+|\\+18|🔞|sex(?:o|ual)?|hentai|onlyfans)(?![a-z0-9])', re.I)
+ADULT = re.compile(r'(?<![a-z0-9])(?:xxx|porn\w*|erotic\w*|adult(?:o|os|s)?|18\s*\+|\+18|🔞|sex(?:o|ual)?|hentai|onlyfans)(?![a-z0-9])', re.I)
 BAD_TV = re.compile(r'(?<![a-z0-9])(?:sd|4k|uhd|2160p|480p|360p)(?![a-z0-9])', re.I)
 GOOD_TV = re.compile(r'(?<![a-z0-9])(?:hd|fhd|full[ -]?hd|1080p|720p)(?![a-z0-9])', re.I)
-EPISODE = re.compile(r'(?i)(?:s(\\d{1,2})[ ._-]*e(\\d{1,3})|t(\\d{1,2})[ ._-]*e(\\d{1,3})|(\\d{1,2})x(\\d{1,3})|temporada[ ._-]*(\\d{1,2}).{0,12}?epis[oó]dio[ ._-]*(\\d{1,3}))')
-LANG_DUB = re.compile(r'(?i)\\b(?:dublado|dublagem|dub|pt[ ._-]?br|portugu[eê]s)\\b')
-LANG_SUB = re.compile(r'(?i)\\b(?:legendado|legendas?|sub(?:titled)?|original)\\b')
-LANG_WORDS = re.compile(r'(?i)\\b(?:dublado|dublagem|dub|pt[ ._-]?br|portugu[eê]s|legendado|legendas?|sub(?:titled)?|original)\\b')
-QUALITY = re.compile(r'(?i)\\b(?:sd|hd|fhd|4k|uhd|2160p|1080p|720p|480p|360p)\\b')
+EPISODE = re.compile(r'(?i)(?:s(\d{1,2})[ ._-]*e(\d{1,3})|t(\d{1,2})[ ._-]*e(\d{1,3})|(\d{1,2})x(\d{1,3})|temporada[ ._-]*(\d{1,2}).{0,12}?epis[oó]dio[ ._-]*(\d{1,3}))')
+LANG_DUB = re.compile(r'(?i)\b(?:dublado|dublagem|dub|pt[ ._-]?br|portugu[eê]s)\b')
+LANG_SUB = re.compile(r'(?i)\b(?:legendado|legendas?|sub(?:titled)?|original)\b')
+LANG_WORDS = re.compile(r'(?i)\b(?:dublado|dublagem|dub|pt[ ._-]?br|portugu[eê]s|legendado|legendas?|sub(?:titled)?|original)\b')
+QUALITY = re.compile(r'(?i)\b(?:sd|hd|fhd|4k|uhd|2160p|1080p|720p|480p|360p)\b')
 
 def norm(s):
     s = unicodedata.normalize("NFKD", s.casefold())
@@ -42,7 +42,7 @@ def lang_for(text):
 def clean_title(title):
     title = LANG_WORDS.sub(" ", title)
     title = QUALITY.sub(" ", title)
-    title = re.sub(r"[\\[\\](){}]", " ", title)
+    title = re.sub(r"[\[\](){}]", " ", title)
     return " ".join(title.split()).strip(" -_|:.")
 
 def series_parts(title):
