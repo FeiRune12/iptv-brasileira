@@ -62,8 +62,8 @@ def series_parts(title):
 def fetch(name):
     url = f"https://raw.githubusercontent.com/{UPSTREAM}/{REVISION}/{name}"
     req = urllib.request.Request(url, headers={"User-Agent":"AzureTV-Export/1.0"})
-    with urllib.request.urlopen(req, timeout=180) as response:
-        return response
+    # Return the open response; the caller owns and closes it with "with".
+    return urllib.request.urlopen(req, timeout=180)
 
 def main():
     counts = Counter()
