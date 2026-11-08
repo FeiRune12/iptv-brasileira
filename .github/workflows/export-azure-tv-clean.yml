@@ -1,0 +1,32 @@
+name: Exportar Azure TV limpa (arquivo para download)
+
+on:
+  push:
+    branches:
+      - export/azure-tv-clean-2026-11-08
+    paths:
+      - .github/workflows/export-azure-tv-clean.yml
+      - scripts/export_azure_tv_clean.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gerar playlist limpa
+        run: python3 scripts/export_azure_tv_clean.py
+
+      - name: Publicar arquivo como artefato temporario
+        uses: actions/upload-artifact@v4
+        with:
+          name: Azure-TV-Limpa-HD-FHD
+          path: Azure_TV_Limpa_HD_FHD.m3u8
+          if-no-files-found: error
+          retention-days: 3
